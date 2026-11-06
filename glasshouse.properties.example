@@ -13,10 +13,10 @@ home.secondClock=Mumbai:Asia/Kolkata
 # "Where to watch" regions, as TMDB country code:label. The first is the default, and the others are a tap away.
 regions=PT:Portugal,US:United States
 
-# The app one remote button opens. 491 is the Disney+ button on a Sony Bravia remote; to find another button's
-# code, run `adb shell getevent -lt`, press it and convert the hex EV_KEY code to decimal.
-remote.button9.app=com.disney.disneyplus
-remote.button9.scanCode=491
+# Remote buttons that open a chosen app, as scanCode:package, separated by commas. Buttons not listed work as normal.
+# To find a button's code, run `adb shell getevent -lt`, press it and convert the hex EV_KEY code to decimal.
+# On a Sony Bravia remote: 491 Disney+, 496 BRAVIA CORE, 507 Crunchyroll.
+remote.buttons=491:com.disney.disneyplus
 
 # The party's name, and who's hosting.
 party.title=Diwali Party

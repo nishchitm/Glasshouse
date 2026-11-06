@@ -126,7 +126,7 @@ All of this lives in `glasshouse.properties`, which git ignores. Every line is o
 | `home.name`, `home.latitude`, `home.longitude`, `home.timeZone` | City, weather and clock. Set these if a VPN confuses your TV. Without coordinates there's no weather |
 | `home.secondClock` | A second, smaller clock, such as `Mumbai:Asia/Kolkata` |
 | `regions` | "Where to watch" countries. The first is the default |
-| `remote.button9.app` | The app opened by a remote's shortcut button |
+| `remote.buttons` | Remote buttons that open an app you choose |
 | `party.title`, `party.hosts`, `party.teams`, `party.playlists` | Your party's name, hosts, team names and Spotify playlists |
 
 Your streaming services are listed in [`StreamingService.kt`](app/src/main/java/com/cleantv/launcher/data/StreamingService.kt). Other changes mean editing the code, which is short and commented.

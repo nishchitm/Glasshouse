@@ -21,7 +21,8 @@ import android.view.accessibility.AccessibilityNodeInfo
 class RemoteKeyService : AccessibilityService() {
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
-        val action: () -> Unit = when (event.keyCode) {
+        val remapped = ButtonApps[event.scanCode]
+        val action: () -> Unit = if (remapped != null) { -> openApp(listOf(remapped)) } else when (event.keyCode) {
             // The gear button. Google TV's home answered it with its quick-settings panel; with that home turned
             // off, Glasshouse shows its own.
             KeyEvent.KEYCODE_NOTIFICATION -> { ->
@@ -29,10 +30,6 @@ class RemoteKeyService : AccessibilityService() {
                     Intent(this, MainActivity::class.java).putExtra(MainActivity.EXTRA_QUICK_SETTINGS, true).newTask(),
                 )
             }
-            // One remote button (Disney+ on a Sony Bravia remote) → the app in `remote.button9.app`. Several app buttons
-            // arrive as this same key and differ only by scan code, so the others are left for the TV to handle.
-            KeyEvent.KEYCODE_BUTTON_9 -> BuildConfig.REMOTE_BUTTON_APP.takeIf { it.isNotEmpty() && event.scanCode.toString() == BuildConfig.REMOTE_BUTTON_SCAN }
-                ?.let { app -> { -> openApp(listOf(app)) } } ?: return false
             // The mic / Google Assistant button → Jarvis, listening.
             KeyEvent.KEYCODE_VOICE_ASSIST, KeyEvent.KEYCODE_ASSIST, KeyEvent.KEYCODE_SEARCH -> { ->
                 startActivity(Intent(this, MainActivity::class.java).putExtra(MainActivity.EXTRA_JARVIS, true).newTask())
@@ -137,6 +134,15 @@ class RemoteKeyService : AccessibilityService() {
 
         // Google ends its own listening under a second after the last word.
         private const val WORDS_SETTLED_MS = 800L
+        /**
+         * The `remote.buttons` setting: remote buttons that open a chosen app, by scan code. Several app buttons on a Sony
+         * remote share one key code and differ only by scan code, and any button not listed stays with the TV.
+         */
+        private val ButtonApps: Map<Int, String> = BuildConfig.REMOTE_BUTTONS.split(',').mapNotNull { entry ->
+            val parts = entry.trim().split(':')
+            parts.getOrNull(1)?.let { app -> parts[0].toIntOrNull()?.let { it to app.trim() } }
+        }.toMap()
+
         private const val GOOGLE_VOICE = "com.google.android.katniss"
     }
 }
