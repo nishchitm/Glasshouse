@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Glasshouse</string>
+    <string name="remote_keys_description">Lets Glasshouse remap remote buttons, e.g. the Disney+ button to JioHotstar, and keep the Settings button working.</string>
+</resources>

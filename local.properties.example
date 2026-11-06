@@ -1,0 +1,11 @@
+# Copy to local.properties (gitignored).
+sdk.dir=/path/to/Android/sdk
+
+# Required: film and series data. Free at https://www.themoviedb.org/settings/api
+tmdb.apiKey=
+
+# Optional: the Jarvis assistant, Gemini's free tier. https://aistudio.google.com/apikey
+gemini.apiKey=
+
+# Optional: Govee lights. Govee Home app → Profile → Settings → Apply for API Key
+govee.apiKey=

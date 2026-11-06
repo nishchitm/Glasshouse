@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#1a0b2e">
+<title>{{PARTY}}</title>
+<style>
+  :root { --bg:#14081f; --card:#24123a; --line:#ffffff22; --text:#fff; --dim:#ffffffa0; --gold:#ffc94d; --t0:#ff8a3d; --t1:#c86bff; --ok:#4cd964; --bad:#ff5a6a; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--text);
+         background:radial-gradient(circle at 20% 0%,#3a1450 0,transparent 55%),radial-gradient(circle at 90% 100%,#4a2a08 0,transparent 50%),var(--bg);
+         min-height:100vh; padding:16px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:16px; }
+  .me { font-weight:700; }
+  .pill { padding:4px 10px; border-radius:99px; font-size:13px; font-weight:600; }
+  .t0 { background:#ff8a3d33; color:var(--t0); } .t1 { background:#c86bff33; color:var(--t1); }
+  .scores { display:flex; gap:6px; font-size:13px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:20px; }
+  h1 { font-size:22px; margin:0 0 6px; } h2 { font-size:18px; margin:0 0 12px; }
+  p { color:var(--dim); margin:6px 0; line-height:1.4; }
+  input { width:100%; font-size:18px; padding:14px; border-radius:14px; border:1px solid var(--line); background:#0008; color:var(--text); margin:12px 0; }
+  button { font:inherit; border:0; border-radius:16px; padding:16px; font-size:17px; font-weight:700; color:#111; background:var(--gold); width:100%; }
+  button:disabled { opacity:.35; }
+  .row { display:flex; gap:10px; } .row > * { flex:1; }
+  .teambtn.t0 { background:var(--t0); color:#1a0b2e; } .teambtn.t1 { background:var(--t1); color:#1a0b2e; }
+  .teambtn.sel { outline:3px solid #fff; }
+  /* Sized from the smaller of width and height, so it stays a circle on any phone. */
+  .buzz { display:block; width:min(74vw,44vh); height:auto; aspect-ratio:1; padding:0; margin:30px auto 18px; border-radius:50%; touch-action:manipulation;
+          font-size:clamp(34px,11vw,52px); font-weight:800; letter-spacing:.05em; color:#fff;
+          background:radial-gradient(circle at 35% 28%,#ff8a94,#e8233f 55%,#a30d28);
+          box-shadow:0 0 0 10px #ffffff0f, 0 10px 0 #6e0a1e, 0 24px 44px #e8233f55; transition:transform .05s,box-shadow .05s; }
+  .buzz:active:not(:disabled) { transform:translateY(7px); box-shadow:0 0 0 10px #ffffff0f, 0 3px 0 #6e0a1e, 0 10px 20px #e8233f55; }
+  .buzz:disabled { opacity:1; color:#ffffff80; background:radial-gradient(circle at 35% 28%,#4a3a5c,#2f2340); box-shadow:0 0 0 10px #ffffff08, 0 6px 0 #1a1226; }
+  .buzz.mine:disabled { color:#2a1440; background:radial-gradient(circle at 35% 28%,#ffe08a,#ffc94d 60%,#d99a1c); box-shadow:0 0 0 10px #ffc94d33, 0 6px 0 #8a5f0c, 0 24px 44px #ffc94d55; }
+  .prompt { color:var(--text); font-size:20px; font-weight:700; line-height:1.35; margin:0 0 12px; }
+  .opts { display:grid; gap:10px; margin-top:12px; }
+  .opts button { background:#ffffff14; color:var(--text); text-align:left; font-weight:600; }
+  .opts button.mine { outline:2px solid var(--gold); } .opts .right { background:#4cd96455; }
+  .big { font-size:28px; font-weight:800; text-align:center; margin:18px 0; }
+  .ticket { display:grid; grid-template-columns:repeat(9,1fr); gap:4px; margin:12px 0; }
+  .cell { aspect-ratio:1; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; background:#ffffff10; user-select:none; }
+  .cell.n { background:#fff; color:#2a1440; } .cell.n.marked { background:var(--gold); color:#2a1440; text-decoration:line-through; }
+  .cell.n.called:not(.marked) { box-shadow:inset 0 0 0 2px var(--ok); }
+  .claims { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .claims button { font-size:14px; padding:12px; }
+  .claims button.won { background:#ffffff22; color:var(--dim); }
+  .last { text-align:center; font-size:15px; color:var(--dim); }
+  .last b { font-size:40px; color:var(--gold); display:block; }
+  .toast { position:fixed; left:16px; right:16px; bottom:16px; padding:14px; border-radius:14px; background:#000d; text-align:center; font-weight:600; display:none; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+<script>
+const app = document.getElementById('app');
+let id = localStorage.getItem('pid') || '';
+let team = null, state = null, lastGame = '', draft = '', draftFor = -1;
+const marks = new Set(JSON.parse(localStorage.getItem('marks') || '[]'));
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 2500); }
+async function post(path, data) {
+  const r = await fetch(path, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams({id, ...data}) });
+  return r.json();
+}
+
+function joinScreen(teams) {
+  app.innerHTML = `
+    <div class="card">
+      <h1>🪔 Welcome to {{PARTY}}!</h1>
+      <p>Join the games. Your name shows on the TV.</p>
+      <input id="name" placeholder="Your name" maxlength="20" autocomplete="off">
+      <div class="row">
+        <button class="teambtn t0" data-t="0">${esc(teams[0])}</button>
+        <button class="teambtn t1" data-t="1">${esc(teams[1])}</button>
+      </div>
+      <p style="text-align:center">Pick a team, or skip and we'll balance them.</p>
+      <button id="go" style="margin-top:8px">Join</button>
+    </div>`;
+  app.querySelectorAll('.teambtn').forEach(b => b.onclick = () => {
+    team = b.dataset.t; app.querySelectorAll('.teambtn').forEach(x => x.classList.toggle('sel', x === b));
+  });
+  document.getElementById('go').onclick = async () => {
+    const name = document.getElementById('name').value.trim();
+    if (!name) { toast('Type your name first'); return; }
+    const r = await post('/api/join', team == null ? { name } : { name, team });
+    // iPhones keep the name box focused after tapping Join, and poll() doesn't redraw while it has focus.
+    document.getElementById('name').blur();
+    id = r.id; localStorage.setItem('pid', id); localStorage.removeItem('marks'); marks.clear();
+    poll();
+  };
+}
+
+function header(s) {
+  return `<header>
+    <span class="me">${s.character} ${esc(s.name)} <span class="pill t${s.team}">${esc(s.teamName)}</span></span>
+    <span class="scores"><span class="pill t0">${+s.scores[0]}</span><span class="pill t1">${+s.scores[1]}</span></span>
+  </header>`;
+}
+
+function render(s) {
+  if (!s.joined) { if (!document.getElementById('name')) joinScreen(s.teams); return; }
+  if (s.game !== lastGame) { if (s.game === 'Tambola') { marks.clear(); localStorage.removeItem('marks'); } lastGame = s.game; }
+  let body;
+  if (s.loading) body = `<div class="card"><h2>${esc(s.gameLabel)}</h2><p>Getting the game ready…</p></div>`;
+  else if (s.rulesUp && s.rules) {
+    const r = s.rules;
+    body = `<div class="card"><h2>How to play: ${esc(r.title)}</h2><p><i>${esc(r.tagline)}</i></p><p>👥 ${esc(r.players)}</p>
+      <ol style="padding-left:20px;line-height:1.4">${r.steps.map(x => `<li style="margin-bottom:8px">${esc(x)}</li>`).join('')}</ol>
+      <p style="color:var(--gold);font-weight:700">🏆 ${esc(r.scoring)}</p><p>The game starts when the host presses Let's play.</p></div>`;
+  }
+  else if (s.game === 'Lobby') body = `<div class="card"><h1>You're in! ${s.character}</h1><p>That's you on the TV's Box Office chart. You're #${s.rank} with ${+s.myScore} points.</p><p>Watch the TV: the host will start a game soon.</p></div>`;
+  else if (s.game === 'Emoji') {
+    const b = s.buzz;
+    let line = 'Know the title? Buzz!';
+    if (b.mine) line = '🔔 You buzzed! Say your answer out loud.';
+    else if (b.winner) line = `${esc(b.winner)} buzzed first.`;
+    else if (b.lockedOut) line = 'Wrong guess: you sit this one out.';
+    else if (b.verdict) line = 'Round over: the verdict is on the TV!';
+    else if (b.revealed) line = 'Answer is on the TV.';
+    body = `<div class="card"><h2>${esc(s.gameLabel)}</h2><p>${line}</p>
+      <button class="buzz ${b.mine ? 'mine' : ''}" id="buzz" ${b.open ? '' : 'disabled'}>${b.mine ? 'YOU!' : 'BUZZ'}</button></div>`;
+  } else if (s.game === 'Charades') {
+    const c = s.charades;
+    const ready = c.myTeam && !c.started && !c.turnOver ? `<button id="ready" style="margin-top:14px">I'm ready</button>` : '';
+    const doing = c.hum ? 'humming' : 'acting';
+    const task = c.hum ? 'Hum this song, no words:' : 'Act out this film:';
+    const go = c.hum ? 'Go! Hum it, no words.' : 'Go! No talking.';
+    if (c.me && c.title) body = `<div class="card"><h2>You're ${doing}! ${c.hum ? '🎶' : '🎭'}</h2><p>Don't show anyone. ${task}</p><div class="big">${esc(c.title)}</div><p>${c.started ? go : 'The clock starts when your team is ready.'}</p>${ready}</div>`;
+    else if (c.me) body = `<div class="card"><h2>Your turn is over</h2><p>Hand the remote back to the host.</p></div>`;
+    else body = `<div class="card"><h2>${esc(s.gameLabel)}</h2><p><b>${esc(c.actor || 'Someone')}</b> (${esc(c.actorTeam)}) is ${doing}.</p><p>${c.myTeam ? (c.started ? 'Shout your guesses! 🗣️' : 'Ready to guess? Tap when you are.') : 'Shh, it\'s their turn.'}</p>${ready}</div>`;
+  } else if (s.game === 'Frame' && s.frame) {
+    const f = s.frame;
+    if (f.revealed) {
+      const line = f.mine < 0 ? 'You didn\'t answer this time.' : f.mine === f.right ? `✅ Right! +${+f.worth}` : `❌ You picked ${esc(f.choices[f.mine])}.`;
+      body = `<div class="card"><h2>It was ${esc(f.choices[f.right])}</h2><p>${line}</p></div>`;
+    } else if (f.mine >= 0) body = `<div class="card"><h2>Locked in 🔒</h2><p>You picked <b>${esc(f.choices[f.mine])}</b>, worth ${+f.worth} if you're right.</p><p>Watch the TV.</p></div>`;
+    else if (!f.open) body = `<div class="card"><h2>Focus Kar, Bhai</h2><p>Getting the picture ready…</p></div>`;
+    else body = `<div class="card"><h2>Which film is it?</h2><p>The sooner you pick, the more it's worth. You only get one go!</p><div class="opts">${f.choices.map((c, i) => `<button data-frame="${i}">${esc(c)}</button>`).join('')}</div></div>`;
+  } else if (s.game === 'Bluff' && s.bluff) {
+    const b = s.bluff;
+    if (b.index !== draftFor) { draft = ''; draftFor = b.index; }
+    const prompt = `<div class="prompt">${esc(b.prompt)}</div>`;
+    if (b.phase === 'Writing' && b.mine) body = `<div class="card"><h2>Sach Ya Bakwaas 🤥</h2>${prompt}<p>Your lie: <b>${esc(b.mine)}</b></p><p>Waiting for the others…</p></div>`;
+    else if (b.phase === 'Writing') body = `<div class="card"><h2>Write a believable lie 🤥</h2>${prompt}<input id="fake" maxlength="40" autocomplete="off" placeholder="Fill the blank" value="${esc(draft)}"><button id="send">Send my lie</button></div>`;
+    else if (b.phase === 'Voting' && b.myVote >= 0) body = `<div class="card"><h2>Vote locked in 🔒</h2>${prompt}<p>You picked <b>${esc(b.options[b.myVote].text)}</b>. Watch the TV.</p></div>`;
+    else if (b.phase === 'Voting') body = `<div class="card"><h2>Which one is true?</h2>${prompt}<div class="opts">${b.options.filter(o => !o.own).map(o => `<button data-vote="${o.i}">${esc(o.text)}</button>`).join('')}</div></div>`;
+    else {
+      const picked = b.options[b.myVote];
+      const line = !picked ? 'You didn\'t vote this time.' : picked.truth ? '✅ You spotted the truth! +1' : `❌ You fell for ${picked.author ? esc(picked.author) + "'s" : 'our'} lie.`;
+      body = `<div class="card"><h2>The truth: ${esc(b.answer)}</h2>${prompt}<p>${line}</p>${b.fooled ? `<p>🤥 Your lie fooled ${b.fooled} from the other team! +${b.fooled}</p>` : ''}</div>`;
+    }
+  } else if (s.game === 'Tambola' && s.tambola) {
+    const t = s.tambola, called = new Set(t.called);
+    const last = t.called[t.called.length - 1];
+    const cells = t.ticket.flat().map(n => n == null ? `<div class="cell"></div>`
+      : `<div class="cell n ${marks.has(n) ? 'marked' : ''} ${called.has(n) ? 'called' : ''}" data-n="${n}">${n}</div>`).join('');
+    const claims = t.claims.map(c => `<button data-claim="${c.id}" class="${c.winner ? 'won' : ''}" ${c.winner ? 'disabled' : ''}>${esc(c.label)}${c.winner ? '<br><small>' + esc(c.winner) + '</small>' : ''}</button>`).join('');
+    body = `<div class="card"><div class="last">Last number<b>${last ?? '–'}</b></div>
+      <div class="ticket">${t.ticket.length ? cells : '<p>Your ticket arrives when the next game starts.</p>'}</div>
+      <p style="text-align:center">Tap numbers to mark them. Green ring = already called.</p>
+      <div class="claims">${claims}</div></div>`;
+  } else body = `<div class="card"><p>…</p></div>`;
+  app.innerHTML = header(s) + body;
+
+  const buzz = document.getElementById('buzz');
+  // On touch-down, not on release: first finger down should win.
+  if (buzz) buzz.onpointerdown = async () => { if (buzz.disabled) return; navigator.vibrate?.(80); await post('/api/buzz', {}); poll(); };
+  const fake = document.getElementById('fake');
+  if (fake) {
+    fake.oninput = () => { draft = fake.value; };
+    const send = async () => {
+      const r = await post('/api/fake', { text: fake.value });
+      if (r.message) { toast(r.message); return; }
+      fake.blur(); poll();
+    };
+    fake.onkeydown = e => { if (e.key === 'Enter') send(); };
+    document.getElementById('send').onclick = send;
+  }
+  // On touch-down, like the buzzer: the points depend on when you tapped.
+  app.querySelectorAll('[data-frame]').forEach(b => b.onpointerdown = async () => { navigator.vibrate?.(40); await post('/api/frame', { choice: b.dataset.frame }); poll(); });
+  app.querySelectorAll('[data-vote]').forEach(b => b.onclick = async () => { navigator.vibrate?.(40); await post('/api/vote', { option: b.dataset.vote }); poll(); });
+  const ready = document.getElementById('ready');
+  if (ready) ready.onclick = async () => { navigator.vibrate?.(60); await post('/api/ready', {}); poll(); };
+  app.querySelectorAll('.cell.n').forEach(c => c.onclick = () => {
+    const n = +c.dataset.n; marks.has(n) ? marks.delete(n) : marks.add(n);
+    localStorage.setItem('marks', JSON.stringify([...marks])); c.classList.toggle('marked');
+  });
+  app.querySelectorAll('[data-claim]').forEach(b => b.onclick = async () => { const r = await post('/api/claim', { claim: b.dataset.claim }); toast(r.message); poll(); });
+}
+
+let polling = false, lastKey = '', version = 0;
+async function poll() {
+  if (polling) return; polling = true;
+  try {
+    const r = await fetch('/api/state?id=' + encodeURIComponent(id), { cache:'no-store' });
+    const s = await r.json();
+    if (version && s.version !== version) return location.reload();
+    version = s.version;
+    // Redraw only when something changed: redrawing replaces the buttons, and a tap that lands on a button
+    // being replaced is lost.
+    const key = JSON.stringify(s);
+    // Don't pull the box out from under someone typing, unless the round has moved on.
+    const typing = document.activeElement?.id;
+    const busy = typing === 'name' || (typing === 'fake' && s.bluff?.phase === 'Writing' && s.bluff.index === draftFor && !s.bluff.mine);
+    if (key !== lastKey && !busy) {
+      lastKey = key;
+      render(s);
+    }
+    state = s;
+  } catch (e) { /* TV asleep or game night closed; keep trying */ }
+  polling = false;
+}
+poll(); setInterval(poll, 600);
+</script>
+</body>
+</html>

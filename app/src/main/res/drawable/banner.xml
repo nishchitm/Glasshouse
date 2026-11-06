@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 320x180 TV banner: glass pill on a dusk gradient. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="320dp" android:height="180dp"
+    android:viewportWidth="320" android:viewportHeight="180">
+    <path android:pathData="M0,0h320v180h-320z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="0"
+                android:endX="320" android:endY="180"
+                android:startColor="#FF2B1B5C" android:endColor="#FF0E6E8C" />
+        </aapt:attr>
+    </path>
+    <path android:fillColor="#33FFFFFF" android:strokeColor="#99FFFFFF" android:strokeWidth="2"
+        android:pathData="M70,60h180a30,30 0,0 1,30 30v0a30,30 0,0 1,-30 30h-180a30,30 0,0 1,-30 -30v0a30,30 0,0 1,30 -30z" />
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M108,76a14,14 0,1 0,0 28a14,14 0,0 0,10 -4l-4,-4a8,8 0,1 1,0 -12l4,-4a14,14 0,0 0,-10 -4z M128,78h28v6h-11v20h-6v-20h-11z M160,78h6l8,19l8,-19h6l-11,26h-6z" />
+</vector>

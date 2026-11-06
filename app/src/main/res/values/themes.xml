@@ -1,0 +1,6 @@
+<resources>
+    <style name="Theme.Glasshouse" parent="android:Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+</resources>

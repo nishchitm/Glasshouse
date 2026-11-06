@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#08080f">
+<title>TV remote</title>
+<style>
+  :root { --bg:#08080f; --glass:#ffffff0f; --glass-on:#ffffff26; --line:#ffffff17; --text:#fff; --dim:#ffffff8c; --accent:#cbb8ff; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { background:var(--bg); }
+  body { margin:0 auto; max-width:480px; min-height:100dvh; font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif; color:var(--text);
+    padding:max(16px,env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+    background:radial-gradient(120% 50% at 50% -10%,#3a2c6e66,transparent); background-repeat:no-repeat; }
+  button { font:inherit; color:var(--text); background:var(--glass); border:1px solid var(--line); border-radius:16px; cursor:pointer; touch-action:manipulation; transition:transform .1s,background .1s; }
+  button:active { transform:scale(.95); background:var(--glass-on); }
+  h2 { font-size:13px; font-weight:600; color:var(--dim); margin:24px 4px 10px; }
+  .ask { display:flex; align-items:flex-end; gap:8px; padding:6px; background:var(--glass); border:1px solid var(--line); border-radius:24px; }
+  .ask:focus-within { border-color:#cbb8ff80; }
+  textarea { flex:1; min-width:0; height:44px; max-height:120px; resize:none; font:inherit; font-size:17px; line-height:24px; color:var(--text); background:none; border:0; outline:0; padding:10px 8px 10px 12px; }
+  textarea::placeholder { color:var(--dim); }
+  .send { flex:none; width:44px; height:44px; border:0; border-radius:50%; background:var(--accent); color:#120c24; font-size:20px; font-weight:700; }
+  .search-link { display:block; width:100%; margin-top:8px; padding:10px; background:none; border:0; color:var(--dim); font-size:14px; }
+  .controls { display:grid; grid-template-columns:1fr 1fr 76px; gap:10px; margin-top:16px; }
+  .big { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; height:112px; font-size:13px; font-weight:600; border-radius:24px; }
+  .big svg { width:26px; height:26px; }
+  .volume { grid-row:span 1; display:flex; flex-direction:column; height:112px; overflow:hidden; background:var(--glass); border:1px solid var(--line); border-radius:24px; }
+  .volume button { flex:1; border:0; border-radius:0; background:none; font-size:22px; }
+  .volume button:active { background:var(--glass-on); transform:none; }
+  .volume button + button { border-top:1px solid var(--line); }
+  .mute { width:100%; margin-top:10px; padding:13px; font-size:14px; font-weight:600; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .chips button { padding:10px 15px; border-radius:99px; font-size:14px; font-weight:550; }
+  .apps { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .apps button { position:relative; aspect-ratio:16/9; padding:0; overflow:hidden; border-radius:12px; background:#1a1a26; font-size:11px; }
+  .apps img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .pin-card { margin-top:22vh; text-align:center; }
+  .pin-card h1 { font-size:26px; margin:0 0 8px; }
+  .pin-card p { color:var(--dim); margin:0 0 24px; font-size:15px; }
+  #pin { font:inherit; font-size:32px; letter-spacing:.5em; text-indent:.5em; text-align:center; width:100%; padding:16px; border-radius:18px; border:1px solid var(--line); background:var(--glass); color:var(--text); outline:0; }
+  #go { width:100%; margin-top:12px; padding:15px; border:0; background:var(--accent); color:#120c24; font-weight:700; }
+  .toast { position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom)); transform:translate(-50%,16px); max-width:calc(100% - 32px); padding:10px 18px; border-radius:99px; background:#000d; border:1px solid var(--line); font-size:14px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .15s,transform .15s; }
+  .toast.on { opacity:1; transform:translate(-50%,0); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+<script>
+let pin = '';
+try { pin = localStorage.getItem('tvpin') || ''; } catch (e) {}
+const app = document.getElementById('app');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 1600); }
+async function api(path, data = {}) {
+  const r = await fetch('/api/' + path, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams({ pin, ...data }) });
+  return r.json();
+}
+const buzz = () => navigator.vibrate && navigator.vibrate(10);
+
+function pinScreen() {
+  app.innerHTML = `<div class="pin-card"><h1>TV remote</h1>
+    <p>Enter the PIN from the TV's Quick settings</p>
+    <input id="pin" inputmode="numeric" maxlength="4" autocomplete="off" aria-label="PIN"><button id="go">Connect</button></div>`;
+  document.getElementById('go').onclick = async () => {
+    pin = document.getElementById('pin').value.trim();
+    const r = await api('check').catch(() => ({}));
+    if (r.ok) { try { localStorage.setItem('tvpin', pin); } catch (e) {} main(); } else toast('Wrong PIN');
+  };
+}
+
+async function main() {
+  app.innerHTML = `
+    <div class="ask">
+      <textarea id="text" rows="1" placeholder="Ask Jarvis anything…" aria-label="Ask Jarvis"></textarea>
+      <button class="send" id="ask" aria-label="Ask Jarvis">↑</button>
+    </div>
+    <button class="search-link" id="search">Search on the TV instead</button>
+    <div class="controls" style="margin-top:8px">
+      <button class="big" data-a="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Home</button>
+      <button class="big" data-a="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l-6 6 6 6"/><path d="M3 12h18"/></svg>Back</button>
+      <div class="volume"><button data-v="up" aria-label="Volume up">+</button><button data-v="down" aria-label="Volume down">−</button></div>
+    </div>
+    <button class="mute" data-v="mute">Mute</button>
+    <h2>Lights</h2>
+    <div class="chips" id="lights">
+      <button data-l="On">On</button><button data-l="Off">Off</button><button data-l="Movie">Movie</button>
+      <button data-l="Bright">Bright</button><button data-l="Gold">Festive</button>
+    </div>
+    <h2>Sleep</h2>
+    <div class="chips">
+      <button data-s="30">30 min</button><button data-s="60">1 hour</button><button data-s="90">90 min</button><button data-s="0">Off</button>
+    </div>
+    <h2>Apps</h2>
+    <div class="apps" id="apps"></div>`;
+  const box = document.getElementById('text');
+  const text = () => box.value.trim();
+  const send = async (path, msg) => { if (!text()) return box.focus(); buzz(); await api(path, { text: text() }); box.value = ''; box.style.height = ''; toast(msg); };
+  document.getElementById('ask').onclick = () => send('ask', 'Sent to Jarvis');
+  document.getElementById('search').onclick = () => send('search', 'Searching on the TV');
+  box.oninput = () => { box.style.height = 'auto'; box.style.height = box.scrollHeight + 'px'; };
+  box.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send('ask', 'Sent to Jarvis'); } };
+  const wire = root => {
+    root.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { buzz(); api(b.dataset.a); });
+    root.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { buzz(); api('volume', { dir: b.dataset.v }); });
+    root.querySelectorAll('[data-l]').forEach(b => b.onclick = async () => { buzz(); await api('lights', { preset: b.dataset.l }); toast('Lights: ' + b.textContent); });
+    root.querySelectorAll('[data-s]').forEach(b => b.onclick = async () => { buzz(); await api('sleep', { minutes: b.dataset.s }); toast(b.dataset.s === '0' ? 'Sleep timer off' : 'TV sleeps in ' + b.textContent); });
+  };
+  wire(app);
+  const r = await api('apps');
+  const lights = document.getElementById('lights');
+  (r.scenes || []).forEach(s => {
+    const b = document.createElement('button');
+    b.dataset.l = s;
+    b.textContent = s.replace(/ setup$/, '');
+    lights.append(b);
+  });
+  wire(lights);
+  const q = encodeURIComponent(pin);
+  document.getElementById('apps').innerHTML = (r.apps || []).map(a =>
+    `<button data-p="${esc(a.pkg)}" data-n="${esc(a.name)}" aria-label="${esc(a.name)}">${esc(a.name)}<img loading="lazy" alt="" src="/icon?pin=${q}&pkg=${encodeURIComponent(a.pkg)}" onerror="this.remove()"></button>`).join('');
+  app.querySelectorAll('[data-p]').forEach(b => b.onclick = async () => { buzz(); await api('open', { pkg: b.dataset.p }); toast('Opening ' + b.dataset.n); });
+}
+
+(async () => {
+  if (!pin) return pinScreen();
+  const r = await api('check').catch(() => ({}));
+  r.ok ? main() : pinScreen();
+})();
+</script>
+</body>
+</html>

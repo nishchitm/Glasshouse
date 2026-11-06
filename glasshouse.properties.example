@@ -1,0 +1,25 @@
+# Copy to glasshouse.properties (gitignored) and edit. Every line is optional.
+
+# Clock and weather. Without coordinates there's no weather; without a time zone the TV's own is used.
+# Set these if you use a VPN, which can make the TV think it's somewhere else.
+home.name=Lisbon
+home.latitude=38.7223
+home.longitude=-9.1393
+home.timeZone=Europe/Lisbon
+
+# A second, smaller clock. Label:TimeZone.
+home.secondClock=Mumbai:Asia/Kolkata
+
+# "Where to watch" regions, as TMDB country code:label. The first is the default, and the others are a tap away.
+regions=PT:Portugal,US:United States
+
+# The app the remote's shortcut button opens (KEYCODE_BUTTON_9, the Disney+ button on some Sony remotes).
+remote.button9.app=com.disney.disneyplus
+
+# The party's name, and who's hosting.
+party.title=Diwali Party
+party.hosts=Sam & Alex's
+party.teams=Team Diya,Team Rangoli
+
+# Jukebox playlists on Spotify. Name|URI, separated by semicolons.
+party.playlists=Bollywood party|spotify:playlist:1bzEiznTmu3KPdEQGIRVQV
