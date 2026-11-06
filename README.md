@@ -1,8 +1,16 @@
 <h1 align="center">Glasshouse</h1>
 
-<p align="center">Declutter your Android TV: turn off the bloat and replace the cluttered home screen with a clean, minimal one.</p>
+<p align="center">An open-source Android TV launcher. Declutter your TV: turn off the bloat and replace the cluttered home screen with a clean, minimal one. Includes Diwali party games.</p>
 
-<p align="center"><img src="docs/screenshots/home.jpg" alt="The Glasshouse home screen" width="800"></p>
+<table>
+<tr><th>Before: Google TV</th><th>After: Glasshouse</th></tr>
+<tr>
+<td><img src="docs/screenshots/before.jpg" alt="The stock Google TV home screen, led by a sponsored ad"></td>
+<td><img src="docs/screenshots/home.jpg" alt="The Glasshouse home screen"></td>
+</tr>
+</table>
+
+<p align="center"><sub>The stock home screen on the same TV, leading with a sponsored ad. Personal details are blurred.</sub></p>
 
 Smart TVs ship with promo rows, preinstalled apps you never asked for and a home screen built to sell you things. Glasshouse does two things about that:
 
