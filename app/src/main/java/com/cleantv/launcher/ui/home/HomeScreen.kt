@@ -1026,6 +1026,7 @@ private fun Dock(
 ) {
     // Hold OK on an app to pick it up; ◀ ▶ then move it, and OK or Back puts it down.
     var moving by remember { mutableStateOf<String?>(null) }
+    val okReleased = remember { mutableStateOf(false) }
     Box {
     // The apps load after the + tile is shown; when they arrive, start from the first one. Otherwise the row
     // stays anchored on +, the first app is scrolled off (so it can't take the initial focus).
@@ -1063,9 +1064,12 @@ private fun Dock(
                     // While one app is picked up, the rest step back.
                     .graphicsLayer { alpha = if (moving != null && !isMoving) 0.45f else 1f }
                     .then(if (i == 0) Modifier.focusRequester(firstApp) else Modifier)
-                    .then(if (isMoving) Modifier.onPreviewKeyEvent { e -> moveKeys(e, app.packageName, onMove) { moving = null } } else Modifier),
+                    .then(if (isMoving) Modifier.onPreviewKeyEvent { e -> moveKeys(e, app.packageName, okReleased, onMove) { moving = null } } else Modifier),
                 moving = isMoving,
-                onLongClick = { moving = app.packageName },
+                onLongClick = {
+                    okReleased.value = false
+                    moving = app.packageName
+                },
             ) { if (isMoving) moving = null else onOpen(app.packageName) }
         }
         item(key = "edit") {
@@ -1211,12 +1215,20 @@ private fun AppPicker(all: List<DockApp>, pinned: Set<String>, onToggle: (String
 }
 
 /** While an app is picked up: ◀ ▶ move it, OK or Back drop it. Everything else is swallowed. */
-private fun moveKeys(e: androidx.compose.ui.input.key.KeyEvent, pkg: String, onMove: (String, Int) -> Unit, onDrop: () -> Unit): Boolean {
-    if (e.type != KeyEventType.KeyDown) return e.key in setOf(Key.DirectionLeft, Key.DirectionRight, Key.Back, Key.DirectionUp, Key.DirectionDown)
+private fun moveKeys(e: androidx.compose.ui.input.key.KeyEvent, pkg: String, released: MutableState<Boolean>, onMove: (String, Int) -> Unit, onDrop: () -> Unit): Boolean {
+    // The app is picked up while OK is still held, and the remote keeps repeating it until it's let go. So OK only
+    // puts the app down on a release after that one, which also stops the release opening the app.
+    if (e.key == Key.DirectionCenter || e.key == Key.Enter) {
+        if (e.type == KeyEventType.KeyUp) {
+            if (released.value) onDrop() else released.value = true
+        }
+        return true
+    }
+    if (e.type != KeyEventType.KeyDown) return e.key in setOf(Key.DirectionLeft, Key.DirectionRight, Key.DirectionUp, Key.DirectionDown, Key.Back)
     when (e.key) {
         Key.DirectionLeft -> onMove(pkg, -1)
         Key.DirectionRight -> onMove(pkg, 1)
-        Key.Back, Key.DirectionCenter, Key.Enter -> onDrop()
+        Key.Back -> onDrop()
         Key.DirectionUp, Key.DirectionDown -> Unit // stay on the app bar while moving
         else -> return false
     }

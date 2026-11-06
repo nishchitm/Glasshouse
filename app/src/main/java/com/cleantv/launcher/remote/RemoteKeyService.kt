@@ -29,8 +29,10 @@ class RemoteKeyService : AccessibilityService() {
                     Intent(this, MainActivity::class.java).putExtra(MainActivity.EXTRA_QUICK_SETTINGS, true).newTask(),
                 )
             }
-            // A remote's app shortcut (the Disney+ button on some Sony remotes) → the app in `remote.button9.app`.
-            KeyEvent.KEYCODE_BUTTON_9 -> BuildConfig.REMOTE_BUTTON_APP.takeIf { it.isNotEmpty() }?.let { app -> { -> openApp(listOf(app)) } } ?: return false
+            // One remote button (Disney+ on a Sony Bravia remote) → the app in `remote.button9.app`. Several app buttons
+            // arrive as this same key and differ only by scan code, so the others are left for the TV to handle.
+            KeyEvent.KEYCODE_BUTTON_9 -> BuildConfig.REMOTE_BUTTON_APP.takeIf { it.isNotEmpty() && event.scanCode.toString() == BuildConfig.REMOTE_BUTTON_SCAN }
+                ?.let { app -> { -> openApp(listOf(app)) } } ?: return false
             // The mic / Google Assistant button → Jarvis, listening.
             KeyEvent.KEYCODE_VOICE_ASSIST, KeyEvent.KEYCODE_ASSIST, KeyEvent.KEYCODE_SEARCH -> { ->
                 startActivity(Intent(this, MainActivity::class.java).putExtra(MainActivity.EXTRA_JARVIS, true).newTask())

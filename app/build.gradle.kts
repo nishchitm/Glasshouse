@@ -37,6 +37,7 @@ android {
         setting("SECOND_CLOCK", "home.secondClock")
         setting("REGIONS", "regions", "US:United States,GB:United Kingdom,IN:India")
         setting("REMOTE_BUTTON_APP", "remote.button9.app")
+        setting("REMOTE_BUTTON_SCAN", "remote.button9.scanCode", "491")
         setting("PARTY_TITLE", "party.title", "Diwali Party")
         setting("PARTY_HOSTS", "party.hosts")
         setting("PARTY_TEAMS", "party.teams", "Team Diya,Team Rangoli")
